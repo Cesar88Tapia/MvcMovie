@@ -19,10 +19,36 @@ namespace MvcMovie.Controllers
         }
 
         // GET: Movies
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string MovieGenre, string searchString)
         {
+
+            IQueryable<string> genreQuery = from m in _context.Movie
+                                            orderby m.Genre
+                                            select m.Genre;
+            //Creates LINQ query to select the movies.
+            var movies = from m in _context.Movie
+                         select m;
+            //If the (searchString) parameter contains a string the movies query is modified
+            //to filter on the value of the (searchString).
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                //LAMBDA expression
+                movies = movies.Where(s => s.Title.Contains(searchString));
+            }
+
+            var movieGenreVM = new MovieGenreViewModel();
+            movieGenreVM.genres = new SelectList(await genreQuery.Distinct().ToListAsync());
+            movieGenreVM.movies = await movies.ToListAsync();
+
             return View(await _context.Movie.ToListAsync());
         }
+
+        //Post: Movies
+        //[HttpPost]
+        //public string Index(string seachString, bool notUsed)
+        //{
+        //    return "From [HttpPost] Index: filter on " + seachString;
+        //}
 
         // GET: Movies/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -53,7 +79,7 @@ namespace MvcMovie.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Create([Bind("ID,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
             if (ModelState.IsValid)
             {
@@ -85,7 +111,7 @@ namespace MvcMovie.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Edit(int id, [Bind("ID,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
             if (id != movie.ID)
             {
